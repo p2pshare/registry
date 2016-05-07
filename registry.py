@@ -19,9 +19,6 @@
 import sqlite3
 import hashlib
 import json
-
-
-
 def justBuildTableIfNonexistence(tablename):
     connection = sqlite3.connect("share.db")
     connection.isolation_level = None
@@ -62,34 +59,12 @@ def justBuildTableIfNonexistence(tablename):
     connection.close()
 
 
-def main():
-    # str = '{ "id": 12, "filename": "filename.mp4", "hash": "{}md5hash}", "author": "{{ username }}", "chunks": [{ "id": 1, "hash": "{{hash}}" }, { "id": 2, "hash": "{{hash}}" }, { "id": 3, "hash": "{{hash}}" }, { "id": 4, "hash": "{{hash}}" }], "trackers": [ "t1.p2pshare.net", "t2.p2pshare.net", "t3.p2pshare.net", "t4.p2pshare.net" ] }'
-    # print json.loads(str)
-
-    # add("filename", "author", ["tracker1", "tracker2", "tracker3"])
-    print search("filename","filename")
-
-
-# def get():
-#     connection = sqlite3.connect("share.db")
-#     connection.isolation_level = None
-#     cursor = connection.cursor()
-#     sql_statement = "SELECT f.file_id FROM files;"
-#     if sqlite3.complete_statement(sql_statement):
-#         try:
-#             sql_statement = sql_statement.strip()
-#             connection.execute(sql_statement)
-#             if sql_statement.lstrip().upper().startswith("SELECT"):
-#                 rows = cursor.fetchall()
-#                 for eachRow in rows:
+# def main():
+#     # str = '{ "id": 12, "filename": "filename.mp4", "hash": "{}md5hash}", "author": "{{ username }}", "chunks": [{ "id": 1, "hash": "{{hash}}" }, { "id": 2, "hash": "{{hash}}" }, { "id": 3, "hash": "{{hash}}" }, { "id": 4, "hash": "{{hash}}" }], "trackers": [ "t1.p2pshare.net", "t2.p2pshare.net", "t3.p2pshare.net", "t4.p2pshare.net" ] }'
+#     # print json.loads(str)
 #
-#         except sqlite3.Error as e:
-#             print "An error occurred:", e.args[0]
-#         connection.close()
-
-
-
-
+#     # add("filename", "author", ["tracker1", "tracker2", "tracker3"])
+#     print search("filename","filename")
 
 # Search for a registry by filename? by hash? by author?
 # type: filename or hash or author
@@ -106,6 +81,10 @@ def search(search_key, search_type):
             sql_statement = "SELECT * FROM FILES f WHERE f.hash = '"+search_key+"';"
         elif search_type == "author":
             sql_statement = "SELECT * FROM FILES f WHERE f.author = '"+search_key+"';"
+        elif search_type == "id":
+            sql_statement = "SELECT * FROM FILES f WHERE f.file_id = '"+search_key+"';"
+        elif search_type == "id_trackers":
+            sql_statement = "SELECT DISTINCT f.tracker FROM FILES_TRACKERS f WHERE f.file_id = '"+search_key+"';" 
         else:
             print "The Search Type '"+search_type+"' has not been defined."
             sql_statement = "INVALID"
@@ -114,7 +93,8 @@ def search(search_key, search_type):
         sql_statement = "INVALID"
 
     if sql_statement == "INVALID":
-        pass
+        return None
+        # pass
     else:
         connection = sqlite3.connect("share.db")
         connection.isolation_level = None
@@ -127,7 +107,10 @@ def search(search_key, search_type):
                     return cursor.fetchall()
             except sqlite3.Error as e:
                 print "An error occurred:", e.args[0]
+                connection.close()
+                return None
         connection.close()
+        return None
 
 
 def add(filename, author, *trackers):
@@ -163,9 +146,13 @@ def add(filename, author, *trackers):
                             cursor.execute(sql_statement)
                         except sqlite3.Error as e:
                             print "An error occurred:", e.args[0]
+                            return None
+            return file_id
         except sqlite3.Error as e:
              print "An error occurred:", e.args[0]
+             connection.close()
+             return None
     connection.close()
-
-if __name__ == "__main__":
-    main()
+    return None
+# if __name__ == "__main__":
+#     main()

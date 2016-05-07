@@ -11,36 +11,15 @@ sock.connect(server_address)
 
 try:
     while True:
-        # Send data
-        # message = raw_input("What do you wanna do? 'sendfile <filename>'? ")
-        message = "sendfile P1010822.JPG"
-        operation = message.split(" ")
-        _ = raw_input("wait? ")
-        if operation[0].strip().upper() == "SENDFILE":
-            message = message.upper()
-            sock.sendall(message)
-            print "Filename sent ", message
-            file_descriptor = open(operation[1], "rb")
-            print "File Opened ",operation[1]
-            while True:
-                chunk = file_descriptor.read(4096)
-                if chunk:
-                    sock.send(chunk)
-                    print('Sent ', repr(chunk))
-                else:
-                    sock.close()
-                    break
-        else:
-            print >>sys.stderr, ' sending "%s"' % message
-            sock.sendall(message)
+        message = raw_input("json or id\n")
+        print >>sys.stderr, ' sending "%s"' % message
+        sock.sendall(message)
+        print "Sent: ",message
 
-            # Look for the response
-            amount_received = 0
-            amount_expected = len(message)
-            while amount_received < amount_expected:
-                data = sock.recv(4096)
-                amount_received += len(data)
-                print >>sys.stderr, 'received "%s"' % data
+        data = sock.recv(4096)
+        print >>sys.stderr, 'received "%s"' % data
+
+
 finally:
     print >>sys.stderr, ' Socket Closing.'
     sock.close()

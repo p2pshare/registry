@@ -1,6 +1,10 @@
 import socket
 import sys
 from time import sleep
+import sqlite3
+import hashlib
+import json
+import registry
 
 # Create a TCP/IP socket (socket.SOCK_DREAM = UDP)
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -28,46 +32,64 @@ while True:
             data = connection.recv(4096)
             print >>sys.stderr, 'received "%s"' % data
             if data:
-                str_arr = data.split(" ")
-                if str_arr[0].strip().upper() == "SENDFILE":
-                    filename = str_arr[1]
-                    with open("1_"+filename, 'wb') as f:
-                        print 'File Opened ',"1_"+filename
-                        while True:
-                            try:
-                                data = connection.recv(4096)
-                            except socket.timeout, e:
-                                err = e.args[0]
-                                # this next if/else is a bit redundant, but illustrates how the
-                                # timeout exception is setup
-                                if err == 'timed out':
-                                    sleep(1)
-                                    print 'recv timed out, retry later'
-                                    continue
-                                else:
-                                    print e
-                                    break
-                            except socket.error, e:
-                                # Something else happened, handle error, exit, etc.
-                                print e
-                                break
-                            else:
-                                if len(data) == 0:
-                                    print 'orderly shutdown on server end'
-                                    break
-                                else:
-                                    f.write(data)
+                try:
+                    i = int(data)
+                    ret = registry.search(str(i), "id")
+                    j = {}
+                    j["id"] = ret[0][0]
+                    j["filename"] = ret[0][1]
+                    j["hash"] = ret[0][2]
+                    j["author"] = ret[0][3]
+                    j["chunks"] = ret[0][4]
+                    ret = registry.search(str(i), "id_trackers")
+                    j["trackers"] = ret
+                    r = json.dumps(j)
+                    connection.sendall(r)
+                except ValueError, e:
+                    j = json.loads(data)
+                    filename = j['filename'] # single string
+                    author = j['author'] # single string
+                    trackers = j['trackers'] # list expected
+                    # print filename
+                    # print author
+                    # print trackers
+                    file_id = registry.add(filename, author, trackers)
+                    if file_id is not None:
+                        connection.sendall(str(file_id))
+                    else:
+                        connection.sendall("BAD REQUEST")
 
-                else:
-                    print >>sys.stderr, 'sending data back to the client'
-                    connection.sendall(str_arr[1])
-                    connection.close()
+                # str_arr = data.strip().split(" ")
+                # if str_arr[0].strip().upper() == "ADDSHARE":
+                #     filename = str_arr[1].strip()
+                #     author = str_arr[2].strip()
+                #     trackers = str_arr[3].strip()
+                #     tracker_list = trackers.split("||")
+                #     # def add(filename, author, *trackers):
+                #     if registry.add(filename, author, tracker_list) == True:
+                #         connection.sendall("OK")
+                #     else:
+                #         connection.sendall("BAD")
+                #
+                # elif str_arr[0].strip().upper() == "GETSHARE":
+                #     # def search(search_key, search_type):
+                #     search_key = str_arr[1].strip()
+                #     search_type = str_arr[2].strip()
+                #     ret = registry.search(search_key, search_type)
+                #     print ret
+                #     for each in ret:
+                #         for i in range(0, len(each)):
+                #             print each[i]
+                #
+                #         connection.sendall(ret1)
+                #     connection.sendall("BAD")
+                # else:
+                #     print >>sys.stderr, str_arr[0].strip().upper(), ' is an invalid Request. Only ADDSHARE or GETSHARE.'
+                #     connection.sendall("BAD")
+                #     connection.close()
             else:
-                print >>sys.stderr, 'no more data from ', client_address
+                print >>sys.stderr, 'Connection from ', client_address, ' Closed.'
                 break
     finally:
         # Clean up the connection
         connection.close()
-
-
-
