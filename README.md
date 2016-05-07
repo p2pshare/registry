@@ -62,13 +62,17 @@
   - Bind the socket to the localhost and default port#8000
   - Listen to the port which has been connecting to the socket
   - Once a client connects to the port, the socket accepts the connection
-  - COMMAND: 'Sendfile <filename>'
-    - Once the file transfer is over, client will terminate the connection
+  - 2 Incoming Type of data allowed:
+    - a single INTEGER
+      - Asking for a JSON by id
+    - a designated JSON
+      - Asking for adding share and id in return
 
 # TCP Client
 ###### Usage: python tcp_server.py
 - Implementation
   - Make TCP Socket by Socket.AF_INET, Socket.SOCK_STREAM
   - Connect the socket to a particular localhost and port
-  - Command 'sendfile <filename>' to initialize a file transfer session
+  - To initialize a file transfer session
+    - JSON or Integer
     - Once the file transfer is over, client will terminate the connection
